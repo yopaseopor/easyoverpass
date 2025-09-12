@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            trigger: 'hover',
+            html: true
+        });
+    });
     // DOM Elements
     const queryConditions = document.getElementById('queryConditions');
     const addConditionBtn = document.getElementById('addCondition');
@@ -336,164 +344,47 @@ document.addEventListener('DOMContentLoaded', function() {
                         };
                     }
                 } else if (element.geometry.length === 1) {
-                    // Single point
-                    geometry = {
-                        type: 'Point',
-                        coordinates: [
-                            parseFloat(element.geometry[0].lon),
-                            parseFloat(element.geometry[0].lat)
-                        ]
-                    };
-                }
-            }
-            
-            if (!geometry) {
-                // Fallback to point at 0,0 if no geometry
-                geometry = { type: 'Point', coordinates: [0, 0] };
-            }
-            
-            // Create properties object
-            const properties = { ...element.tags };
-            properties.id = element.id;
-            properties.type = element.type;
-            
-            return {
-                type: 'Feature',
-                properties,
-                geometry
-            };
-        });
         
-        return JSON.stringify({
-            type: 'FeatureCollection',
-            features
-        }, null, 2);
-    }
-    
-    // Add a new condition row
-    function addCondition(condition = {}) {
-        const conditionId = Date.now();
-        const conditionHtml = `
-            <div class="condition-group fade-in" id="condition-${conditionId}">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1 d-block">Element Type</label>
-                        <select class="form-select element-type">
-                            <option value="node" ${condition.elementType === 'node' ? 'selected' : ''}>Node</option>
-                            <option value="way" ${condition.elementType === 'way' ? 'selected' : ''}>Way</option>
-                            <option value="relation" ${condition.elementType === 'relation' ? 'selected' : ''}>Relation</option>
-                            <option value="nwr" ${!condition.elementType || condition.elementType === 'nwr' ? 'selected' : ''}>Node/Way/Relation</option>
-                        </select>
+return row.join(',');
+});
+                        <div class="autocomplete-items"></div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1 d-block">Key</label>
-                        <div class="autocomplete">
-                            <input type="text" class="form-control key" placeholder="e.g., amenity, shop" value="${condition.key || ''}" autocomplete="off">
-                            <div class="autocomplete-items"></div>
-                        </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1 d-block">
+                        Operator
+                        <i class="bi bi-info-circle text-muted ms-1" 
+                           data-bs-toggle="tooltip" 
+                           data-bs-html="true"
+                           title="<b>Operators:</b><br>= equals<br>≠ not equals<br>~ matches regex<br>!~ not matches regex<br>^~ starts with<br>!^~ not starts with">
+                        </i>
+                    </label>
+                    <select class="form-select operator">
+                        <option value="=" ${condition.operator === '=' ? 'selected' : ''}>= (equals)</option>
+                        <option value="!=" ${condition.operator === '!=' ? 'selected' : ''}>≠ (not equals)</option>
+                        <option value="~" ${condition.operator === '~' ? 'selected' : ''}>~ (regex match)</option>
+                        <option value="!~" ${condition.operator === '!~' ? 'selected' : ''}>!~ (not regex)</option>
+                        <option value="^~" ${condition.operator === '^~' ? 'selected' : ''}>^~ (starts with)</option>
+                        <option value="!^~" ${condition.operator === '!^~' ? 'selected' : ''}>!^~ (not starts with)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1 d-block">Value</label>
+                    <div class="autocomplete">
+                        <input type="text" class="form-control value" placeholder="e.g., restaurant, cafe" value="${condition.value || ''}" autocomplete="off">
+                        <div class="autocomplete-items"></div>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted mb-1 d-block">Operator</label>
-                        <select class="form-select operator">
-                            <option value="=" ${condition.operator === '=' ? 'selected' : ''}>=</option>
-                            <option value="!=" ${condition.operator === '!=' ? 'selected' : ''}>≠</option>
-                            <option value="~" ${condition.operator === '~' ? 'selected' : ''}>~</option>
-                            <option value="!~" ${condition.operator === '!~' ? 'selected' : ''}>!~</option>
-                            <option value="^~" ${condition.operator === '^~' ? 'selected' : ''}>^~</option>
-                            <option value="!^~" ${condition.operator === '!^~' ? 'selected' : ''}>!^~</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1 d-block">Value</label>
-                        <div class="autocomplete">
-                            <input type="text" class="form-control value" placeholder="e.g., restaurant, cafe" value="${condition.value || ''}" autocomplete="off">
-                            <div class="autocomplete-items"></div>
-                        </div>
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button type="button" class="btn btn-outline-danger btn-sm remove-condition">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-condition" title="Remove condition">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             </div>
-        `;
-        
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = conditionHtml.trim();
-        const newCondition = tempDiv.firstChild;
-        
-        queryConditions.appendChild(newCondition);
-        
-        // Add event listener to the remove button
-        newCondition.querySelector('.remove-condition').addEventListener('click', function() {
-            newCondition.classList.add('fade-out');
-            setTimeout(() => {
-                newCondition.remove();
-                generateQuery(); // Update query when a condition is removed
-            }, 300);
-        });
-        
-        return newCondition;
-    }
-
-    // Get current timeout value in seconds
-    function getTimeout() {
-        const timeout = parseInt(timeoutSelect.value, 10);
-        return isNaN(timeout) || timeout < 1 ? 30 : Math.min(timeout, 1800);
-    }
-    
-    function generateQuery() {
-        // Get all condition elements
-        const conditionElements = document.querySelectorAll('.condition-group');
-        
-        if (conditionElements.length === 0) {
-            queryOutput.textContent = '// Add at least one condition to generate a query';
-            return;
-        }
-        
-        // Get bounding box values
-        const bbox = {
-            south: bboxInputs.south.value,
-            west: bboxInputs.west.value,
-            north: bboxInputs.north.value,
-            east: bboxInputs.east.value
-        };
-        
-        // Check if all bbox values are filled
-        const hasBbox = Object.values(bbox).every(val => val !== '');
-        
-        // Get timeout value
-        const timeout = getTimeout();
-        
-        // Validate bbox if any value is provided
-        if (hasBbox) {
-            const bboxValues = Object.values(bbox).map(Number);
-            const isValidBbox = bboxValues.every(val => !isNaN(val)) && 
-                              bboxValues[0] < bboxValues[2] && 
-                              bboxValues[1] < bboxValues[3];
-            
-            if (!isValidBbox) {
-                queryOutput.textContent = '// Error: Invalid bounding box coordinates. Please check your values.';
-                return;
-            }
-        }
-        
-        // Process each condition
-        const conditions = Array.from(conditionElements).map(condEl => {
-            const elementType = condEl.querySelector('.element-type').value;
-            const key = condEl.querySelector('.key').value.trim();
-            const operator = condEl.querySelector('.operator').value;
-            const value = condEl.querySelector('.value').value.trim();
-            
-            if (!key) return null;
-            
-            // For empty values, just use the key without operator or value
-            if (value === '') {
-                return { 
-                    elementType, 
-                    condition: `[\"${key}\"]` 
-                };
-            }
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-danger remove-condition">
+                    <i class="bi bi-trash"></i> Remove
+                </button>
             
             // For regex or other operators, use the appropriate syntax
             if (operator === '~' || operator === '!~' || operator === '~^' || operator === '!~^') {
