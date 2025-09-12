@@ -106,44 +106,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=50`;
-            const response = await fetch(url);
-            let results = await response.json();
+            // Show loading state
+            const searchButton = document.getElementById('searchPlace');
+            const searchInput = document.getElementById('placeSearch');
+            const resultsContainer = document.getElementById('searchResults');
             
-            if (results.length === 0) {
-                showToast('No results found', 'info');
+            const originalButtonText = searchButton.innerHTML;
+            searchButton.disabled = true;
+            searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...';
+            
+            // Clear previous results
+            resultsContainer.innerHTML = '<div class="list-group search-results-list"></div>';
+            resultsContainer.classList.remove('d-none');
+            
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=10&addressdetails=1`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            let data = await response.json();
+            
+            // Reset button state
+            searchButton.disabled = false;
+            searchButton.innerHTML = originalButtonText;
+            
+            if (!Array.isArray(data) || data.length === 0) {
+                resultsContainer.innerHTML = '<div class="list-group-item">No results found</div>';
+                showToast('No results found for your search', 'info');
                 return;
             }
             
-            // Filter to get unique main keys (city, village, town, etc.)
-            const uniqueResults = [];
-            const seenTypes = new Set();
+            // Sort by importance
+            data.sort((a, b) => (b.importance || 0) - (a.importance || 0));
             
-            // First pass: Get one result per main type
-            for (const result of results) {
-                const type = result.type || 'place';
-                if (!seenTypes.has(type)) {
-                    seenTypes.add(type);
-                    uniqueResults.push(result);
-                    if (uniqueResults.length >= 10) break;
-                }
-            }
+            // Get the results list container
+            const resultsList = resultsContainer.querySelector('.search-results-list');
+            resultsList.innerHTML = '';
             
-            // If we don't have 10 unique types, fill with remaining results
-            if (uniqueResults.length < 10) {
-                for (const result of results) {
-                    if (!uniqueResults.includes(result)) {
-                        uniqueResults.push(result);
-                        if (uniqueResults.length >= 10) break;
-                    }
-                }
-            }
-            
-            results = uniqueResults.slice(0, 10);
-            
-            // Display results
-            searchResultsList.innerHTML = '';
-            results.forEach(result => {
+            // Process and display each result
+            data.slice(0, 10).forEach(result => {
                 const item = document.createElement('button');
                 item.type = 'button';
                 item.className = 'list-group-item list-group-item-action';
@@ -153,84 +153,156 @@ document.addEventListener('DOMContentLoaded', function() {
                     displayName = displayName.substring(0, 60) + '...';
                 }
                 
+                // Get address components
+                const address = result.address || {};
+                const name = result.display_name.split(',')[0];
+                const type = result.type || 'place';
+                
+                // Build location hierarchy
+                const locationParts = [];
+                const addIfExists = (key) => {
+                    if (address[key] && !locationParts.includes(address[key])) {
+                        locationParts.push(address[key]);
+                    }
+                };
+                
+                // Add relevant location parts in order of specificity
+                ['city', 'town', 'village', 'hamlet', 'municipality', 'county', 'state', 'region', 'country'].forEach(addIfExists);
+                
+                // Type badge with icon
+                const typeIcons = {
+                    'city': 'building',
+                    'town': 'building',
+                    'village': 'house',
+                    'hamlet': 'house',
+                    'suburb': 'pin-map',
+                    'neighbourhood': 'pin-map',
+                    'administrative': 'geo-alt',
+                    'state': 'geo-alt',
+                    'country': 'globe',
+                    'default': 'geo'
+                };
+                
+                const typeIcon = typeIcons[type] || typeIcons.default;
+                
+                // Check if this is a relation (has osm_type='relation' or is an administrative boundary)
+                const isRelation = result.osm_type === 'relation' || 
+                                 (result.type && result.type.includes('administrative'));
+                const relationId = isRelation ? result.osm_id : null;
+                
                 item.innerHTML = `
                     <div class="d-flex w-100 justify-content-between align-items-start">
-                        <div>
+                        <div class="w-100">
                             <div class="d-flex align-items-center gap-2 mb-1">
-                                <h6 class="mb-0">${result.display_name.split(',')[0]}</h6>
-                                <span class="badge bg-secondary">${result.type}</span>
+                                <h6 class="mb-0 flex-grow-1">${name}</h6>
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-${typeIcon} me-1"></i>${type}
+                                </span>
+                                ${relationId ? `
+                                    <span class="badge bg-info" title="Relation ID">
+                                        <i class="bi bi-diagram-3 me-1"></i>${relationId}
+                                    </span>
+                                ` : ''}
                             </div>
-                            <p class="mb-1 small text-muted">${displayName}</p>
-                            <div class="d-flex gap-2 mt-2">
+                            
+                            ${locationParts.length > 0 ? 
+                                `<div class="location-hierarchy small text-muted mb-2">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>
+                                    ${locationParts.join(' › ')}
+                                </div>` : ''
+                            }
+                            
+                            <div class="d-flex flex-wrap gap-2 mt-2">
                                 <span class="badge bg-primary">
-                                    <i class="bi bi-bounding-box"></i> Click to use Bounding Box
+                                    <i class="bi bi-bounding-box me-1"></i>Click for BBox
                                 </span>
                                 <span class="badge bg-success">
-                                    <i class="bi bi-signpost"></i> Shift+Click to use Area Name
+                                    <i class="bi bi-signpost me-1"></i>Shift+Click for Area Name
                                 </span>
+                                ${relationId ? `
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-diagram-3 me-1"></i>Alt+Click for Relation ID
+                                    </span>
+                                ` : ''}
                             </div>
-                        </div>
-                        <div class="text-muted small text-end">
-                            <div>Lat: ${parseFloat(result.lat).toFixed(4)}</div>
-                            <div>Lon: ${parseFloat(result.lon).toFixed(4)}</div>
-                        </div>
-                    </div>
                 `;
                 
-                item.addEventListener('click', async (e) => {
-                    if (e.shiftKey || e.ctrlKey) {
-                        // If shift or ctrl is pressed, just use the area name in the query
-                        placeSearchInput.value = result.display_name.split(',')[0];
-                        searchResultsContainer.classList.add('d-none');
+                // Add click handler for the result item
+                // Create a closure to capture the result for this item
+                (function(result) {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
                         
-                        // Clear bbox to indicate we're using area name
-                        document.getElementById('south').value = '';
-                        document.getElementById('west').value = '';
-                        document.getElementById('north').value = '';
-                        document.getElementById('east').value = '';
+                        // Get the search input and results container
+                        const searchInput = document.getElementById('placeSearch');
+                        const resultsContainer = document.getElementById('searchResults');
+                        const isRelation = result.osm_type === 'relation' || 
+                                         (result.type && result.type.includes('administrative'));
+                        const relationId = isRelation ? result.osm_id : null;
                         
-                        // Update the bbox area display
-                        bboxAreaSpan.textContent = 'Using area name: ' + result.display_name.split(',')[0];
-                        
-                        // Generate the query with the area name
-                        generateQuery();
-                        
-                        showToast(`Using area name: ${result.display_name.split(',')[0]}`, 'success');
-                    } else {
-                        // Normal click - use bbox
-                        if (result.boundingbox && result.boundingbox.length === 4) {
-                            // Use the bounding box from the result
-                            setBbox(
-                                parseFloat(result.boundingbox[0]), // south
-                                parseFloat(result.boundingbox[2]), // west
-                                parseFloat(result.boundingbox[1]), // north
-                                parseFloat(result.boundingbox[3])  // east
-                            );
-                        } else {
-                            // Fallback to a small area around the point
-                            const lat = parseFloat(result.lat);
-                            const lon = parseFloat(result.lon);
-                            const delta = 0.02; // ~2km radius
+                        if (e.altKey && relationId) {
+                            // Use relation ID
+                            const overpassRelationId = parseInt(relationId) + 3600000000;
+                            searchInput.value = `relation:${relationId}`;
+                            resultsContainer.classList.add('d-none');
                             
-                            setBbox(
-                                lat - delta,
-                                lon - delta,
-                                lat + delta,
-                                lon + delta
-                            );
+                            // Clear bbox inputs
+                            document.getElementById('south').value = '';
+                            document.getElementById('north').value = '';
+                            document.getElementById('west').value = '';
+                            document.getElementById('east').value = '';
+                            
+                            // Show success message with both original and Overpass relation IDs
+                            showToast(`Using relation ID: ${relationId} (Overpass ID: ${overpassRelationId}) - ${result.display_name}`, 'info');
+                            
+                            // Generate query with relation ID
+                            generateQuery();
                         }
-                        
-                        // Close results
-                        searchResultsContainer.classList.add('d-none');
-                        placeSearchInput.value = result.display_name.split(',')[0];
-                        
-                        // Show toast with the area size
-                        const area = calculateBboxArea();
-                        showToast(`Set bounding box for ${result.display_name.split(',')[0]} (${area.toFixed(2)} km²). Hold Shift+Click to use area name instead.`, 'success');
-                    }
-                });
+                        else if (e.shiftKey || e.ctrlKey) {
+                            // Use area name
+                            searchInput.value = result.display_name;
+                            resultsContainer.classList.add('d-none');
+                            
+                            // Clear bbox inputs
+                            document.getElementById('south').value = '';
+                            document.getElementById('north').value = '';
+                            document.getElementById('west').value = '';
+                            document.getElementById('east').value = '';
+                            
+                            // Show success message
+                            showToast(`Using area: ${result.display_name}`, 'success');
+                            
+                            // Generate query with area name
+                            generateQuery();
+                        } else {
+                            // Use bbox if available
+                            if (result.boundingbox && result.boundingbox.length === 4) {
+                                setBbox(
+                                    parseFloat(result.boundingbox[0]), // south
+                                    parseFloat(result.boundingbox[2]), // west
+                                    parseFloat(result.boundingbox[1]), // north
+                                    parseFloat(result.boundingbox[3])  // east
+                                );
+                                
+                                searchInput.value = result.display_name;
+                                resultsContainer.classList.add('d-none');
+                                
+                                // Show toast with the area size
+                                const area = calculateBboxArea();
+                                showToast(
+                                    `Set bounding box for ${result.display_name.split(',')[0]} (${area.toFixed(2)} km²). ` + 
+                                    `Hold Shift+Click to use area name. ` + 
+                                    (relationId ? `Alt+Click to use relation ID ${relationId}` : ''), 
+                                    'success'
+                                );
+                            }
+                        }
+                    });
+                })(result);
                 
-                searchResultsList.appendChild(item);
+                // Add the item to the results list
+                resultsList.appendChild(item);
             });
             
             searchResultsContainer.classList.remove('d-none');
@@ -535,9 +607,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Get area name from search input if bbox is empty
-        const areaName = placeSearchInput.value.trim();
-        const hasAreaName = areaName !== '';
+        // Get area name/relation ID from search input if bbox is empty
+        const areaInput = placeSearchInput.value.trim();
+        const hasAreaInput = areaInput !== '';
+        const isRelationId = areaInput.startsWith('relation:');
+        const relationId = isRelationId ? areaInput.replace('relation:', '') : null;
         
         // Get bounding box values
         const bbox = {
@@ -553,8 +627,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get timeout value
         const timeout = getTimeout();
         
-        // If no bbox and no area name, use default bbox
-        if (!hasBbox && !hasAreaName) {
+        // If no bbox and no area input, use default bbox
+        if (!hasBbox && !hasAreaInput) {
             // This will use the default {{bbox}} in the query
         } 
         // If bbox is provided, validate it
@@ -568,6 +642,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 queryOutput.textContent = '// Error: Invalid bounding box coordinates. Please check your values.';
                 return;
             }
+        }
+        // If relation ID is provided, validate it
+        else if (isRelationId && (!/^\d+$/.test(relationId) || !relationId)) {
+            queryOutput.textContent = '// Error: Invalid relation ID. Please use a valid numeric ID after "relation:"';
+            return;
         }
         
         // Process each condition
@@ -618,16 +697,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Build the query
         let query = '';
         // Add settings first (Overpass Ultra is picky about this)
-        query += `[out:json][timeout:${timeout}];\n`;
         
         const queries = [];
         
         // Helper function to build query parts
         const buildQueryPart = (elementType, conditions) => {
-            if (hasAreaName && !hasBbox) {
-                // For area name, we'll add the area query first
-                return `  area[name="${areaName}"]->.searchArea;\n` +
-                       `  ${elementType}${conditions.join('')}(area.searchArea)`;
+            if (hasAreaInput && !hasBbox) {
+                // For area name or relation ID, we'll use area filter
+                return `  ${elementType}${conditions.join('')}(area.searchArea)`;
             } else {
                 // Use bbox for filtering
                 const bboxStr = hasBbox 
@@ -652,19 +729,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (queries.length > 0) {
-            if (hasAreaName && !hasBbox) {
+            if (hasAreaInput && !hasBbox) {
                 // For area queries, we need to build it differently
-                query += '(\n';
-                queries.forEach((q, index) => {
-                    query += q;
-                    if (index < queries.length - 1) {
-                        query += ';\n';
-                    } else {
-                        query += ';\n);\n';
-                    }
-                });
+                query = ''; // Reset query to build from scratch
+                
+                // Add area definition at the beginning
+                if (isRelationId) {
+                    // Add 3600000000 to the relation ID for Overpass compatibility
+                    const overpassRelationId = parseInt(relationId) + 3600000000;
+                    query += `// Using relation ID: ${relationId} (Overpass ID: ${overpassRelationId})\n`;
+                    query += `area(${overpassRelationId})->.searchArea;\n\n`;
+                } else {
+                    query += `// Using area name: ${areaInput}\n`;
+                    query += `area[name="${areaInput}"]->.searchArea;\n\n`;
+                }
+                
+                // Add the main query part
+                query += '(\n' + queries.join(';\n') + ';\n);\n';
             } else {
                 // For bbox queries, use the standard format
+                query = ''; // Reset query to include bbox info
+                if (hasBbox) {
+                    query += `// Using bounding box: ${bbox.south},${bbox.west},${bbox.north},${bbox.east}\n`;
+                } else {
+                    query += '// Using current map view bbox\n';
+                }
                 query += '(\n' + queries.join(';\n') + ';\n);\n';
             }
         }
