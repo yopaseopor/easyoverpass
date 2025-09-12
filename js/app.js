@@ -71,12 +71,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return areaKm2;
     }
     
-    // Clear all bbox inputs
+    // Clear all bbox inputs and reset search
     function clearBbox() {
+        // Clear bbox inputs
         Object.values(bboxInputs).forEach(input => {
             input.value = '';
         });
+        
+        // Clear the search input
+        placeSearchInput.value = '';
+        
+        // Clear area display
         bboxAreaSpan.textContent = '';
+        
+        // Generate query with default bbox
         generateQuery();
     }
     
@@ -98,14 +106,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=50`;
             const response = await fetch(url);
-            const results = await response.json();
+            let results = await response.json();
             
             if (results.length === 0) {
                 showToast('No results found', 'info');
                 return;
             }
+            
+            // Filter to get unique main keys (city, village, town, etc.)
+            const uniqueResults = [];
+            const seenTypes = new Set();
+            
+            // First pass: Get one result per main type
+            for (const result of results) {
+                const type = result.type || 'place';
+                if (!seenTypes.has(type)) {
+                    seenTypes.add(type);
+                    uniqueResults.push(result);
+                    if (uniqueResults.length >= 10) break;
+                }
+            }
+            
+            // If we don't have 10 unique types, fill with remaining results
+            if (uniqueResults.length < 10) {
+                for (const result of results) {
+                    if (!uniqueResults.includes(result)) {
+                        uniqueResults.push(result);
+                        if (uniqueResults.length >= 10) break;
+                    }
+                }
+            }
+            
+            results = uniqueResults.slice(0, 10);
             
             // Display results
             searchResultsList.innerHTML = '';
@@ -120,30 +154,80 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 item.innerHTML = `
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">${result.display_name.split(',')[0]}</h6>
-                        <small class="text-muted">${result.type}</small>
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h6 class="mb-0">${result.display_name.split(',')[0]}</h6>
+                                <span class="badge bg-secondary">${result.type}</span>
+                            </div>
+                            <p class="mb-1 small text-muted">${displayName}</p>
+                            <div class="d-flex gap-2 mt-2">
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-bounding-box"></i> Click to use Bounding Box
+                                </span>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-signpost"></i> Shift+Click to use Area Name
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-muted small text-end">
+                            <div>Lat: ${parseFloat(result.lat).toFixed(4)}</div>
+                            <div>Lon: ${parseFloat(result.lon).toFixed(4)}</div>
+                        </div>
                     </div>
-                    <p class="mb-1 small text-muted">${displayName}</p>
-                    <small>Lat: ${result.lat}, Lon: ${result.lon}</small>
                 `;
                 
-                item.addEventListener('click', () => {
-                    // Set bbox based on the selected place
-                    const lat = parseFloat(result.lat);
-                    const lon = parseFloat(result.lon);
-                    const delta = 0.02; // ~2km radius
-                    
-                    setBbox(
-                        lat - delta,
-                        lon - delta,
-                        lat + delta,
-                        lon + delta
-                    );
-                    
-                    // Close results
-                    searchResultsContainer.classList.add('d-none');
-                    placeSearchInput.value = result.display_name.split(',')[0];
+                item.addEventListener('click', async (e) => {
+                    if (e.shiftKey || e.ctrlKey) {
+                        // If shift or ctrl is pressed, just use the area name in the query
+                        placeSearchInput.value = result.display_name.split(',')[0];
+                        searchResultsContainer.classList.add('d-none');
+                        
+                        // Clear bbox to indicate we're using area name
+                        document.getElementById('south').value = '';
+                        document.getElementById('west').value = '';
+                        document.getElementById('north').value = '';
+                        document.getElementById('east').value = '';
+                        
+                        // Update the bbox area display
+                        bboxAreaSpan.textContent = 'Using area name: ' + result.display_name.split(',')[0];
+                        
+                        // Generate the query with the area name
+                        generateQuery();
+                        
+                        showToast(`Using area name: ${result.display_name.split(',')[0]}`, 'success');
+                    } else {
+                        // Normal click - use bbox
+                        if (result.boundingbox && result.boundingbox.length === 4) {
+                            // Use the bounding box from the result
+                            setBbox(
+                                parseFloat(result.boundingbox[0]), // south
+                                parseFloat(result.boundingbox[2]), // west
+                                parseFloat(result.boundingbox[1]), // north
+                                parseFloat(result.boundingbox[3])  // east
+                            );
+                        } else {
+                            // Fallback to a small area around the point
+                            const lat = parseFloat(result.lat);
+                            const lon = parseFloat(result.lon);
+                            const delta = 0.02; // ~2km radius
+                            
+                            setBbox(
+                                lat - delta,
+                                lon - delta,
+                                lat + delta,
+                                lon + delta
+                            );
+                        }
+                        
+                        // Close results
+                        searchResultsContainer.classList.add('d-none');
+                        placeSearchInput.value = result.display_name.split(',')[0];
+                        
+                        // Show toast with the area size
+                        const area = calculateBboxArea();
+                        showToast(`Set bounding box for ${result.display_name.split(',')[0]} (${area.toFixed(2)} km²). Hold Shift+Click to use area name instead.`, 'success');
+                    }
                 });
                 
                 searchResultsList.appendChild(item);
@@ -451,6 +535,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Get area name from search input if bbox is empty
+        const areaName = placeSearchInput.value.trim();
+        const hasAreaName = areaName !== '';
+        
         // Get bounding box values
         const bbox = {
             south: bboxInputs.south.value,
@@ -465,8 +553,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get timeout value
         const timeout = getTimeout();
         
-        // Validate bbox if any value is provided
-        if (hasBbox) {
+        // If no bbox and no area name, use default bbox
+        if (!hasBbox && !hasAreaName) {
+            // This will use the default {{bbox}} in the query
+        } 
+        // If bbox is provided, validate it
+        else if (hasBbox) {
             const bboxValues = Object.values(bbox).map(Number);
             const isValidBbox = bboxValues.every(val => !isNaN(val)) && 
                               bboxValues[0] < bboxValues[2] && 
@@ -528,36 +620,53 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add settings first (Overpass Ultra is picky about this)
         query += `[out:json][timeout:${timeout}];\n`;
         
-        // Always use a bbox - either the provided one or a default one
-        const bboxToUse = hasBbox ? bbox : {
-            south: -90,
-            west: -180,
-            north: 90,
-            east: 180
-        };
-        
-        const bboxStr = hasBbox 
-            ? `(${bbox.south},${bbox.west},${bbox.north},${bbox.east})`
-            : '({{bbox}})';
-            
         const queries = [];
+        
+        // Helper function to build query parts
+        const buildQueryPart = (elementType, conditions) => {
+            if (hasAreaName && !hasBbox) {
+                // For area name, we'll add the area query first
+                return `  area[name="${areaName}"]->.searchArea;\n` +
+                       `  ${elementType}${conditions.join('')}(area.searchArea)`;
+            } else {
+                // Use bbox for filtering
+                const bboxStr = hasBbox 
+                    ? `(${bbox.south},${bbox.west},${bbox.north},${bbox.east})`
+                    : '({{bbox}})';
+                return `  ${elementType}${conditions.join('')}${bboxStr}`;
+            }
+        };
         
         // Only include element types that have conditions
         if (conditionsByType.node && conditionsByType.node.length > 0) {
-            queries.push(`node${conditionsByType.node.join('')}${bboxStr}`);
+            queries.push(buildQueryPart('node', conditionsByType.node));
         }
         if (conditionsByType.way && conditionsByType.way.length > 0) {
-            queries.push(`way${conditionsByType.way.join('')}${bboxStr}`);
+            queries.push(buildQueryPart('way', conditionsByType.way));
         }
         if (conditionsByType.relation && conditionsByType.relation.length > 0) {
-            queries.push(`relation${conditionsByType.relation.join('')}${bboxStr}`);
+            queries.push(buildQueryPart('relation', conditionsByType.relation));
         }
         if (conditionsByType.nwr && conditionsByType.nwr.length > 0) {
-            queries.push(`nwr${conditionsByType.nwr.join('')}${bboxStr}`);
+            queries.push(buildQueryPart('nwr', conditionsByType.nwr));
         }
         
         if (queries.length > 0) {
-            query += `(\n  ${queries.join(';\n  ')};\n);\n`;
+            if (hasAreaName && !hasBbox) {
+                // For area queries, we need to build it differently
+                query += '(\n';
+                queries.forEach((q, index) => {
+                    query += q;
+                    if (index < queries.length - 1) {
+                        query += ';\n';
+                    } else {
+                        query += ';\n);\n';
+                    }
+                });
+            } else {
+                // For bbox queries, use the standard format
+                query += '(\n' + queries.join(';\n') + ';\n);\n';
+            }
         }
         // No need for else block since we always use a bbox now
         

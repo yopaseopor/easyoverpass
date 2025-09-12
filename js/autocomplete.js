@@ -78,8 +78,16 @@ class TagInfoAutocomplete {
                 <span class="autocomplete-count">${formattedCount}</span>
             `;
             
-            itemElement.addEventListener('click', () => {
+            itemElement.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event from bubbling up to document
                 this.input.value = value;
+                // Manually trigger the input event to ensure the query is updated
+                const event = new Event('input', {
+                    bubbles: true,
+                    cancelable: true,
+                });
+                this.input.dispatchEvent(event);
+                
                 this.closeAllLists();
                 if (this.onSelect) this.onSelect(value);
                 
