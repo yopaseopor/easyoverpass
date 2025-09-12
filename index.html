@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overpass Query Builder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="my-4">
+            <h1 class="text-center">Overpass Query Builder</h1>
+            <p class="text-center text-muted">Build Overpass QL queries easily for OpenStreetMap data</p>
+        </header>
+
+        <div class="row">
+            <!-- Query Builder Panel -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Query Builder</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Bounding Box Selection -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">Query Settings</h6>
+                            </div>
+                            
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-clock"></i>
+                                        </span>
+                                        <input type="number" 
+                                               class="form-control form-control-sm" 
+                                               id="timeout" 
+                                               min="1" 
+                                               max="1800" 
+                                               value="60"
+                                               placeholder="Timeout in seconds">
+                                        <span class="input-group-text">seconds</span>
+                                    </div>
+                                    <div class="form-text small">Set a value between 1-1800 seconds</div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">Bounding Box (Optional)</h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger" id="clearBbox" title="Clear Bounding Box">
+                                        <i class="bi bi-x-circle"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Search by Place -->
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="placeSearch" placeholder="Search for a place (city, address, etc.)">
+                                <button class="btn btn-outline-secondary" type="button" id="searchPlace">
+                                    <i class="bi bi-search"></i> Search
+                                </button>
+                            </div>
+                            <div id="searchResults" class="mb-2 d-none">
+                                <div class="list-group search-results-list"></div>
+                            </div>
+                            
+                            <!-- Bounding Box Inputs -->
+                            <div class="row g-2">
+                                <div class="col">
+                                    <label class="form-label small text-muted mb-0">South (lat)</label>
+                                    <input type="number" class="form-control form-control-sm" id="south" placeholder="-90 to 90" step="0.000001" min="-90" max="90">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small text-muted mb-0">West (lon)</label>
+                                    <input type="number" class="form-control form-control-sm" id="west" placeholder="-180 to 180" step="0.000001" min="-180" max="180">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small text-muted mb-0">North (lat)</label>
+                                    <input type="number" class="form-control form-control-sm" id="north" placeholder="-90 to 90" step="0.000001" min="-90" max="90">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small text-muted mb-0">East (lon)</label>
+                                    <input type="number" class="form-control form-control-sm" id="east" placeholder="-180 to 180" step="0.000001" min="-180" max="180">
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <button class="btn btn-sm btn-outline-primary" id="useMyLocation" title="Set bbox around current location">
+                                        <i class="bi bi-geo-alt"></i> Use My Location
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" id="showBboxOnMap" title="Show bbox on map">
+                                        <i class="bi bi-map"></i> View on Map
+                                    </button>
+                                    <span id="bboxArea" class="ms-2 small text-muted"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Query Conditions -->
+                        <div id="queryConditions">
+                            <div class="condition-group mb-3 p-3 border rounded">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-3">
+                                        <select class="form-select element-type">
+                                            <option value="node">Node</option>
+                                            <option value="way">Way</option>
+                                            <option value="relation">Relation</option>
+                                            <option value="nwr">Node/Way/Relation</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control key" placeholder="Key (e.g., amenity)">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select operator">
+                                            <option value="=">= (equals)</option>
+                                            <option value="!=">≠ (not equals)</option>
+                                            <option value="~">~ (matches regex)</option>
+                                            <option value="!~">!~ (not matches regex)</option>
+                                            <option value="~">~" (case-insensitive regex)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control value" placeholder="Value (e.g., restaurant)">
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-danger remove-condition">
+                                        <i class="bi bi-trash"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-success" id="addCondition">
+                            <i class="bi bi-plus-circle"></i> Add Condition
+                        </button>
+
+                        <div class="mt-4">
+                            <button class="btn btn-primary" id="generateQuery">
+                                <i class="bi bi-gear"></i> Generate Query
+                            </button>
+                            <button class="btn btn-outline-secondary ms-2" id="addExample">
+                                <i class="bi bi-lightbulb"></i> Load Example
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Query Output Panel -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Generated Query</h5>
+                        <div>
+                            <button class="btn btn-sm btn-light" id="copyQuery" title="Copy to clipboard">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            <div class="btn-group ms-2">
+                                <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" id="exportCSV"><i class="bi bi-filetype-csv"></i> CSV</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportJSON"><i class="bi bi-filetype-json"></i> JSON</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportGeoJSON"><i class="bi bi-geo"></i> GeoJSON</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" id="openInOverpassTurbo" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open in Overpass Turbo</a></li>
+                                    <li><a class="dropdown-item" href="#" id="openInOverpassUltra" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open in Overpass Ultra</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <pre id="queryOutput" class="m-0 p-3 bg-light" style="min-height: 300px; max-height: 500px; overflow: auto;">
+// Your generated Overpass QL query will appear here
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="row mt-4">
+            <div class="col-12
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Help & Examples</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="accordion" id="helpAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingOne">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                        How to use this tool
+                                    </button>
+                                </h2>
+                                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#helpAccordion">
+                                    <div class="accordion-body">
+                                        <ol>
+                                            <li>Select the type of OSM element (Node, Way, Relation, or any)</li>
+                                            <li>Enter the tag key (e.g., <code>amenity</code>, <code>shop</code>, <code>tourism</code>)</li>
+                                            <li>Choose an operator (<code>=</code>, <code>!=</code>, <code>~</code> for regex, etc.)</li>
+                                            <li>Enter the tag value (e.g., <code>restaurant</code>, <code>cafe</code>, <code>hotel</code>)</li>
+                                            <li>Optionally, set a bounding box to limit your search area</li>
+                                            <li>Click "Generate Query" to create your Overpass QL query</li>
+                                            <li>Copy the query or open it directly in Overpass Turbo/Ultra</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingTwo">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                        Common Examples
+                                    </button>
+                                </h2>
+                                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#helpAccordion">
+                                    <div class="accordion-body">
+                                        <h6>Find all restaurants in an area:</h6>
+                                        <ul>
+                                            <li>Element: Node/Way/Relation</li>
+                                            <li>Key: <code>amenity</code></li>
+                                            <li>Operator: <code>=</code></li>
+                                            <li>Value: <code>restaurant</code></li>
+                                        </ul>
+
+                                        <h6 class="mt-3">Find all hotels with 4 or more stars:</h6>
+                                        <ul>
+                                            <li>Element: Node/Way/Relation</li>
+                                            <li>Key: <code>tourism</code></li>
+                                            <li>Operator: <code>=</code></li>
+                                            <li>Value: <code>hotel</code></li>
+                                        </ul>
+                                        <ul class="mt-2">
+                                            <li>Key: <code>stars</code></li>
+                                            <li>Operator: <code>>=</code></li>
+                                            <li>Value: <code>4</code></li>
+                                        </ul>
+
+                                        <h6 class="mt-3">Find all cafes with WiFi (using regex):</h6>
+                                        <ul>
+                                            <li>Element: Node/Way/Relation</li>
+                                            <li>Key: <code>amenity</code></li>
+                                            <li>Operator: <code>=</code></li>
+                                            <li>Value: <code>cafe</code></li>
+                                        </ul>
+                                        <ul class="mt-2">
+                                            <li>Key: <code>internet_access</code></li>
+                                            <li>Operator: <code>~</code></li>
+                                            <li>Value: <code>wlan|wifi|yes</code></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingThree">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                        About Overpass QL
+                                    </button>
+                                </h2>
+                                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#helpAccordion">
+                                    <div class="accordion-body">
+                                        <p>Overpass QL is a query language for OpenStreetMap data. It allows you to extract specific data from OSM based on various criteria.</p>
+                                        <p><strong>Key concepts:</strong></p>
+                                        <ul>
+                                            <li><strong>Elements:</strong> The basic components of OSM data (nodes, ways, relations)</li>
+                                            <li><strong>Tags:</strong> Key-value pairs that describe elements (e.g., <code>amenity=restaurant</code>)</li>
+                                            <li><strong>Bounding Box:</strong> A rectangular area defined by latitude/longitude coordinates</li>
+                                            <li><strong>Operators:</strong> <code>=</code> (equals), <code>!=</code> (not equals), <code>~</code> (matches regex), etc.</li>
+                                        </ul>
+                                        <p>For more information, see the <a href="https://wiki.openstreetmap.org/wiki/Overpass_API/Overpass_QL" target="_blank">Overpass QL documentation</a>.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="my-4 text-center text-muted">
+            <p>Overpass Query Builder &copy; 2023 | 
+                <a href="https://github.com/yourusername/overpass-query-builder" target="_blank">GitHub</a> | 
+                <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
