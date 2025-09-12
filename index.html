@@ -121,20 +121,13 @@
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label small text-muted mb-1 d-block">Operator</label>
-                                        <select class="form-select operator" title="Operator Help" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
-                                            data-bs-title="<b>Operators:</b><br>
-                                            • <b>=</b> Equal to<br>
-                                            • <b>≠</b> Not equal to<br>
-                                            • <b>~</b> Matches regex<br>
-                                            • <b>!~</b> Doesn't match regex<br>
-                                            • <b>^~</b> Starts with<br>
-                                            • <b>!^~</b> Doesn't start with">
-                                            <option value="=" title="Equal to">= (equals)</option>
-                                            <option value="!=" title="Not equal to">≠ (not equal)</option>
-                                            <option value="~" title="Matches regular expression">~ (regex match)</option>
-                                            <option value="!~" title="Doesn't match regular expression">!~ (not regex)</option>
-                                            <option value="^~" title="Starts with">^~ (starts with)</option>
-                                            <option value="!^~" title="Doesn't start with">!^~ (not starts with)</option>
+                                        <select class="form-select operator">
+                                            <option value="=">=</option>
+                                            <option value="!=">≠</option>
+                                            <option value="~">~</option>
+                                            <option value="!~">!~</option>
+                                            <option value="^~">^~</option>
+                                            <option value="!^~">!^~</option>
                                         </select>
                                     </div>
                                     <div class="col-md-3">
@@ -145,8 +138,8 @@
                                         </div>
                                     </div>
                                     <div class="col-md-1 d-flex align-items-end">
-                                        <button type="button" class="btn btn-outline-danger btn-sm remove-condition" title="Remove condition">
-                                            <i class="bi bi-x-lg"></i>
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-condition">
+                                            <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -298,19 +291,25 @@
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingFour">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-                                        Data Sources & Services
+                                        OpenStreetMap Tools & Services
                                     </button>
                                 </h2>
                                 <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#helpAccordion">
                                     <div class="accordion-body">
-                                        <h6>Nominatim Search</h6>
-                                        <p>This tool uses <a href="https://nominatim.org/" target="_blank">Nominatim</a>, a search engine for OpenStreetMap data, to help you find places and their coordinates. When you search for a location, Nominatim provides the geographic coordinates that are used to set the bounding box for your query.</p>
+                                        <h5>Nominatim</h5>
+                                        <p>Nominatim is a search engine for OpenStreetMap data. It allows you to look up a location by name or address (geocoding) and generate addresses for OSM points (reverse geocoding). It's used in this tool for searching locations to set your bounding box.</p>
                                         
-                                        <h6 class="mt-4">Taginfo Autocomplete</h6>
-                                        <p>The key and value suggestions are powered by <a href="https://taginfo.openstreetmap.org/" target="_blank">Taginfo</a>, which provides statistics about OSM tags. As you type, it suggests commonly used keys and values from the OpenStreetMap database.</p>
+                                        <h5>Overpass API</h5>
+                                        <p>Overpass API is a read-only API that serves up custom selected parts of the OSM map data. It's optimized for data consumers that need a few elements within a small area or up to roughly 10 million elements in some larger area. This tool generates queries that are executed against the Overpass API.</p>
                                         
-                                        <h6 class="mt-4">Overpass API</h6>
-                                        <p>Queries are executed against the <a href="https://wiki.openstreetmap.org/wiki/Overpass_API" target="_blank">Overpass API</a>, which provides read-only access to the OpenStreetMap database. This allows you to extract specific data based on your criteria.</p>
+                                        <h5>Overpass Turbo</h5>
+                                        <p>Overpass Turbo is a web-based data mining tool for OpenStreetMap. It provides a user-friendly interface to run Overpass QL queries and visualize the results on an interactive map. You can export your queries from this tool to Overpass Turbo for visualization.</p>
+                                        
+                                        <h5>Overpass Ultra</h5>
+                                        <p>Overpass Ultra is a modern, user-friendly interface for the Overpass API. It offers features like syntax highlighting, query validation, and map visualization. It's an alternative to Overpass Turbo with a more modern interface and additional features.</p>
+                                        
+                                        <h5>Taginfo</h5>
+                                        <p>Taginfo helps you find the most popular OpenStreetMap tags and how they're used. It shows statistics about which tags are used together, which values are most common, and where in the world they're used. This tool uses Taginfo to provide autocomplete suggestions for tag keys and values.</p>
                                     </div>
                                 </div>
                             </div>
@@ -321,14 +320,9 @@
         </div>
 
         <footer class="my-4 text-center text-muted">
-            <p>Easy Overpass &copy; 2023 | 
-                <a href="https://yopaseopor.github.io/easyoverpass/" target="_blank">GitHub</a> | 
-                <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>
-            </p>
-            <p class="small text-muted mt-2">
-                Uses data from <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> and services from 
-                <a href="https://nominatim.org/" target="_blank">Nominatim</a> and 
-                <a href="https://taginfo.openstreetmap.org/" target="_blank">Taginfo</a>
+            <p>Overpass Query Builder - 2025 | 
+                <a href="https://github.com/yourusername/overpass-query-builder" target="_blank">GitHub</a> | 
+                <a href="https://www.openstreetmap.org/copyright" target="_blank"> OpenStreetMap contributors</a>
             </p>
         </footer>
     </div>
