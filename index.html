@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/autocomplete.css">
 </head>
 <body>
     <div class="container-fluid">
@@ -100,9 +101,10 @@
 
                         <!-- Query Conditions -->
                         <div id="queryConditions">
-                            <div class="condition-group mb-3 p-3 border rounded">
-                                <div class="row g-2 align-items-center">
+                            <div class="condition-group">
+                                <div class="row g-3">
                                     <div class="col-md-3">
+                                        <label class="form-label small text-muted mb-1 d-block">Element Type</label>
                                         <select class="form-select element-type">
                                             <option value="node">Node</option>
                                             <option value="way">Way</option>
@@ -111,25 +113,42 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <input type="text" class="form-control key" placeholder="Key (e.g., amenity)">
+                                        <label class="form-label small text-muted mb-1 d-block">Key</label>
+                                        <div class="autocomplete">
+                                            <input type="text" class="form-control key" placeholder="e.g., amenity, shop" required autocomplete="off">
+                                            <div class="autocomplete-items"></div>
+                                        </div>
                                     </div>
-                                    <div class="col-md-3">
-                                        <select class="form-select operator">
-                                            <option value="=">= (equals)</option>
-                                            <option value="!=">≠ (not equals)</option>
-                                            <option value="~">~ (matches regex)</option>
-                                            <option value="!~">!~ (not matches regex)</option>
-                                            <option value="~">~" (case-insensitive regex)</option>
+                                    <div class="col-md-2">
+                                        <label class="form-label small text-muted mb-1 d-block">Operator</label>
+                                        <select class="form-select operator" title="Operator Help" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+                                            data-bs-title="<b>Operators:</b><br>
+                                            • <b>=</b> Equal to<br>
+                                            • <b>≠</b> Not equal to<br>
+                                            • <b>~</b> Matches regex<br>
+                                            • <b>!~</b> Doesn't match regex<br>
+                                            • <b>^~</b> Starts with<br>
+                                            • <b>!^~</b> Doesn't start with">
+                                            <option value="=" title="Equal to">= (equals)</option>
+                                            <option value="!=" title="Not equal to">≠ (not equal)</option>
+                                            <option value="~" title="Matches regular expression">~ (regex match)</option>
+                                            <option value="!~" title="Doesn't match regular expression">!~ (not regex)</option>
+                                            <option value="^~" title="Starts with">^~ (starts with)</option>
+                                            <option value="!^~" title="Doesn't start with">!^~ (not starts with)</option>
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <input type="text" class="form-control value" placeholder="Value (e.g., restaurant)">
+                                        <label class="form-label small text-muted mb-1 d-block">Value</label>
+                                        <div class="autocomplete">
+                                            <input type="text" class="form-control value" placeholder="e.g., restaurant, cafe" autocomplete="off">
+                                            <div class="autocomplete-items"></div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-danger remove-condition">
-                                        <i class="bi bi-trash"></i> Remove
-                                    </button>
+                                    <div class="col-md-1 d-flex align-items-end">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-condition" title="Remove condition">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -276,6 +295,25 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingFour">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                        Data Sources & Services
+                                    </button>
+                                </h2>
+                                <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#helpAccordion">
+                                    <div class="accordion-body">
+                                        <h6>Nominatim Search</h6>
+                                        <p>This tool uses <a href="https://nominatim.org/" target="_blank">Nominatim</a>, a search engine for OpenStreetMap data, to help you find places and their coordinates. When you search for a location, Nominatim provides the geographic coordinates that are used to set the bounding box for your query.</p>
+                                        
+                                        <h6 class="mt-4">Taginfo Autocomplete</h6>
+                                        <p>The key and value suggestions are powered by <a href="https://taginfo.openstreetmap.org/" target="_blank">Taginfo</a>, which provides statistics about OSM tags. As you type, it suggests commonly used keys and values from the OpenStreetMap database.</p>
+                                        
+                                        <h6 class="mt-4">Overpass API</h6>
+                                        <p>Queries are executed against the <a href="https://wiki.openstreetmap.org/wiki/Overpass_API" target="_blank">Overpass API</a>, which provides read-only access to the OpenStreetMap database. This allows you to extract specific data based on your criteria.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -283,15 +321,21 @@
         </div>
 
         <footer class="my-4 text-center text-muted">
-            <p>Overpass Query Builder &copy; 2023 | 
-                <a href="https://github.com/yourusername/overpass-query-builder" target="_blank">GitHub</a> | 
-                <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>
+            <p>Easy Overpass &copy; 2023 | 
+                <a href="https://yopaseopor.github.io/easyoverpass/" target="_blank">GitHub</a> | 
+                <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>
+            </p>
+            <p class="small text-muted mt-2">
+                Uses data from <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> and services from 
+                <a href="https://nominatim.org/" target="_blank">Nominatim</a> and 
+                <a href="https://taginfo.openstreetmap.org/" target="_blank">Taginfo</a>
             </p>
         </footer>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/autocomplete.js" defer></script>
+    <script src="js/app.js" defer></script>
 </body>
 </html>

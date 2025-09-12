@@ -213,3 +213,78 @@ footer a {
 footer a:hover {
     text-decoration: underline;
 }
+
+/* Condition Group Styling */
+.condition-group {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.condition-group:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0.125rem 0.5rem rgba(13, 110, 253, 0.1);
+}
+
+/* Operator tooltip styling */
+.tooltip-inner {
+    max-width: 300px;
+    text-align: left;
+    padding: 0.75rem;
+    background-color: #2c3e50;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before, 
+.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #2c3e50;
+}
+
+/* Remove button styling */
+.remove-condition {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    background-color: #f8f9fa;
+    color: #dc3545;
+}
+
+.remove-condition:hover {
+    opacity: 1;
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.remove-condition i {
+    font-size: 0.9rem;
+}
+
+/* Add vertical spacing between form groups */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+/* Add spacing between form elements */
+.form-select, 
+.form-control,
+.input-group {
+    margin-bottom: 0.75rem;
+}
+
+/* Ensure autocomplete dropdown is above other elements */
+.autocomplete {
+    z-index: 10;
+}
