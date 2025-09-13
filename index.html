@@ -16,13 +16,29 @@
             <p class="text-center text-muted">Build Overpass QL queries easily for OpenStreetMap data</p>
         </header>
 
-        <div class="row">
-            <!-- Query Builder Panel -->
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Query Builder</h5>
-                    </div>
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-3" id="queryTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tag-query-tab" data-bs-toggle="tab" data-bs-target="#tag-query" type="button" role="tab" aria-controls="tag-query" aria-selected="true">
+                    <i class="bi bi-tag"></i> Tag Query
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="id-query-tab" data-bs-toggle="tab" data-bs-target="#id-query" type="button" role="tab" aria-controls="id-query" aria-selected="false">
+                    <i class="bi bi-hash"></i> OSM ID Query
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="queryTabsContent">
+            <!-- Tag Query Tab -->
+            <div class="tab-pane fade show active" id="tag-query" role="tabpanel" aria-labelledby="tag-query-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Tag Query Builder</h5>
+                            </div>
                     <div class="card-body">
                         <!-- Bounding Box Selection -->
                         <div class="mb-4">
@@ -194,6 +210,90 @@
                 </div>
             </div>
         </div>
+    </div> <!-- Close tag-query tab -->
+    
+    <!-- OSM ID Query Tab -->
+    <div class="tab-pane fade" id="id-query" role="tabpanel" aria-labelledby="id-query-tab">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">OSM ID Query</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6>Query by OSM Element ID</h6>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Element Type</label>
+                                <select class="form-select" id="osmElementType">
+                                    <option value="node">Node</option>
+                                    <option value="way">Way</option>
+                                    <option value="relation">Relation</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">OSM ID</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-hash"></i>
+                                    </span>
+                                    <input type="number" class="form-control" id="osmId" placeholder="Enter OSM ID" min="1">
+                                </div>
+                                <div class="form-text">Enter the numeric ID of the OSM element</div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button class="btn btn-primary" id="generateOsmIdQuery">
+                                    <i class="bi bi-gear"></i> Generate Query
+                                </button>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="recurseDown" checked>
+                                    <label class="form-check-label" for="recurseDown">Recurse down</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Shared Query Output Panel -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Generated Query</h5>
+                        <div>
+                            <button class="btn btn-sm btn-light" id="copyQueryId" title="Copy to clipboard">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            <div class="btn-group ms-2">
+                                <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" id="exportCSV"><i class="bi bi-filetype-csv"></i> CSV</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportJSON"><i class="bi bi-filetype-json"></i> JSON</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportGeoJSON"><i class="bi bi-geo"></i> GeoJSON</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" id="openInOverpassTurboId" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open in Overpass Turbo</a></li>
+                                    <li><a class="dropdown-item" href="#" id="openInOverpassUltraId" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open in Overpass Ultra</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <pre id="queryOutputId" class="m-0 p-3 bg-light" style="min-height: 300px; max-height: 500px; overflow: auto;">
+// Your generated Overpass QL query will appear here
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- Close id-query tab -->
+</div> <!-- Close tab-content -->
 
         <!-- Help Section -->
         <div class="row mt-4">
