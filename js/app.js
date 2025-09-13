@@ -98,41 +98,67 @@ document.addEventListener('DOMContentLoaded', function() {
         generateQuery();
     }
     
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
     // Search for a place using Nominatim
-    async function searchPlace(query) {
+    async function searchPlace(query, isTyping = false) {
         if (!query.trim()) {
-            showToast('Please enter a place name to search', 'warning');
-            return;
+            if (!isTyping) {
+                showToast('Please enter a place name to search', 'warning');
+            }
+            document.getElementById('searchResults').classList.add('d-none');
+            return [];
         }
         
         try {
-            // Show loading state
+            // Show loading state only for explicit searches, not for typing
             const searchButton = document.getElementById('searchPlace');
             const searchInput = document.getElementById('placeSearch');
             const resultsContainer = document.getElementById('searchResults');
+            let originalButtonText = '';
             
-            const originalButtonText = searchButton.innerHTML;
-            searchButton.disabled = true;
-            searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...';
+            if (!isTyping && searchButton) {
+                originalButtonText = searchButton.innerHTML;
+                searchButton.disabled = true;
+                searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...';
+            }
             
-            // Clear previous results
-            resultsContainer.innerHTML = '<div class="list-group search-results-list"></div>';
-            resultsContainer.classList.remove('d-none');
+            // Show results container when typing
+            if (isTyping) {
+                resultsContainer.innerHTML = '<div class="list-group search-results-list"></div>';
+                resultsContainer.classList.remove('d-none');
+            }
             
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=10&addressdetails=1`);
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&dedupe=1`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             let data = await response.json();
             
-            // Reset button state
-            searchButton.disabled = false;
-            searchButton.innerHTML = originalButtonText;
+            // Reset button state if it exists
+            if (searchButton) {
+                searchButton.disabled = false;
+                searchButton.innerHTML = originalButtonText || 'Search';
+            }
             
             if (!Array.isArray(data) || data.length === 0) {
-                resultsContainer.innerHTML = '<div class="list-group-item">No results found</div>';
+                if (resultsContainer) {
+                    resultsContainer.innerHTML = '<div class="list-group-item">No results found</div>';
+                    resultsContainer.classList.remove('d-none');
+                }
                 showToast('No results found for your search', 'info');
-                return;
+                return [];
             }
             
             // Sort by importance
@@ -190,6 +216,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                  (result.type && result.type.includes('administrative'));
                 const relationId = isRelation ? result.osm_id : null;
                 
+                // Calculate area size if bbox is available
+                let areaSize = null;
+                if (result.boundingbox && result.boundingbox.length === 4) {
+                    const [south, north, west, east] = result.boundingbox.map(parseFloat);
+                    // Convert degrees to km (approximate)
+                    const latLength = 111.32; // km per degree of latitude
+                    const lngLength = 111.32 * Math.cos((south + north) * Math.PI / 360); // km per degree of longitude at this latitude
+                    const width = (east - west) * lngLength;
+                    const height = (north - south) * latLength;
+                    areaSize = (width * height).toFixed(2); // in km²
+                }
+                
                 item.innerHTML = `
                     <div class="d-flex w-100 justify-content-between align-items-start">
                         <div class="w-100">
@@ -205,12 +243,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ` : ''}
                             </div>
                             
-                            ${locationParts.length > 0 ? 
-                                `<div class="location-hierarchy small text-muted mb-2">
-                                    <i class="bi bi-geo-alt-fill me-1"></i>
-                                    ${locationParts.join(' › ')}
-                                </div>` : ''
-                            }
+                            <div class="d-flex flex-wrap align-items-center gap-2 small text-muted mb-2">
+                                ${locationParts.length > 0 ? `
+                                    <span class="d-flex align-items-center">
+                                        <i class="bi bi-geo-alt-fill me-1"></i>
+                                        ${locationParts.join(' › ')}
+                                    </span>
+                                ` : ''}
+                                ${areaSize ? `
+                                    <span class="badge bg-light text-dark border d-flex align-items-center" title="Approximate area size">
+                                        <i class="bi bi-arrows-fullscreen me-1"></i>${areaSize} km²
+                                    </span>
+                                ` : ''}
+                            </div>
                             
                             <div class="d-flex flex-wrap gap-2 mt-2">
                                 <span class="badge bg-primary">
