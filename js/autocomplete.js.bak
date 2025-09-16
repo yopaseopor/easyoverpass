@@ -172,36 +172,25 @@ class TagInfoAutocomplete {
 
 // Initialize autocomplete for all key and value inputs
 function initAutocomplete() {
-    console.log('Initializing autocomplete...');
-    
     // Function to initialize autocomplete for a single input
     const initKeyAutocomplete = (input) => {
-        if (input.hasAttribute('data-autocomplete-initialized')) return;
-        console.log('Initializing key input:', input);
-        
         const isCSV = input.classList.contains('csv-key');
         const valueClass = isCSV ? 'csv-value' : 'value';
-        const conditionGroupClass = isCSV ? '.csv-condition-group' : '.condition-group';
+        const conditionGroupClass = isCSV ? '.condition-group' : '.condition-group';
+        
+        // Only initialize if not already done
+        if (input.hasAttribute('data-autocomplete-initialized')) return;
         
         new TagInfoAutocomplete(input, 'key', (value) => {
-            console.log('Key selected:', value);
             // When a key is selected, focus on the value input
             const conditionGroup = input.closest(conditionGroupClass);
-            console.log('Found condition group:', conditionGroup);
-            
-            if (!conditionGroup) {
-                console.error('Could not find condition group for input:', input);
-                return;
-            }
+            if (!conditionGroup) return;
             
             const valueInput = conditionGroup.querySelector(`.${valueClass}`);
-            console.log('Found value input:', valueInput);
-            
             if (valueInput) {
                 valueInput.focus();
                 // If the value input is empty, trigger input event to show suggestions
                 if (!valueInput.value.trim()) {
-                    console.log('Dispatching input event for value input');
                     valueInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             }
@@ -229,13 +218,13 @@ function initAutocomplete() {
                 if (node.nodeType === 1) { // Element node
                     // Check for key inputs in the added node
                     const keyInputs = node.querySelectorAll ? 
-                        node.querySelectorAll('.key, .csv-key:not([data-autocomplete-initialized])') : [];
+                        node.querySelectorAll('.key, .csv-key') : [];
                     
                     keyInputs.forEach(initKeyAutocomplete);
                     
                     // Initialize any value inputs in the added node
                     const valueInputs = node.querySelectorAll ? 
-                        node.querySelectorAll('.value, .csv-value:not([data-autocomplete-initialized])') : [];
+                        node.querySelectorAll('.value, .csv-value') : [];
                         
                     valueInputs.forEach(input => {
                         if (!input.hasAttribute('data-autocomplete-initialized')) {
@@ -250,20 +239,21 @@ function initAutocomplete() {
     
     // Start observing the document with the configured parameters
     observer.observe(document.body, { 
+        childList: true, 
+        subtree: true,
+        attributes: false,
+        characterData: false
+    });
 }
-});
-}
-});
-});
-});
+                        valueInput.setAttribute('data-autocomplete-initialized', 'true');
+                    }
+                }
+            });
+        });
+    });
     
-// Start observing the document with the configured parameters
-observer.observe(document.body, { 
-childList: true, 
-subtree: true,
-attributes: false,
-characterData: false
-});
+    // Start observing the document with the configured parameters
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 // Initialize when the DOM is fully loaded

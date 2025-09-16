@@ -174,20 +174,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 item.type = 'button';
                 item.className = 'list-group-item list-group-item-action';
                 
-                let displayName = result.display_name;
-                if (displayName.length > 60) {
-                    displayName = displayName.substring(0, 60) + '...';
+                // Get the full display name for the result item
+                let resultDisplayName = result.display_name;
+                if (resultDisplayName.length > 60) {
+                    resultDisplayName = resultDisplayName.substring(0, 60) + '...';
                 }
                 
-                // Get address components
+                // Get address from result or empty object if not available
                 const address = result.address || {};
-                const name = result.display_name.split(',')[0];
+                // Use the first part of display_name as the primary name (first part before comma)
+                const primaryName = result.display_name.split(',')[0].trim();
+                // For display purposes, use the most specific name available
+                const areaDisplayName = address.city || address.town || address.village || address.hamlet || 
+                                     address.municipality || address.county || address.state || address.country || primaryName;
+                
+                // Store the primary name for query generation
+                item.dataset.primaryName = primaryName;
                 const type = result.type || 'place';
                 
                 // Build location hierarchy
                 const locationParts = [];
                 const addIfExists = (key) => {
-                    if (address[key] && !locationParts.includes(address[key])) {
+                    if (address && address[key] && !locationParts.includes(address[key])) {
                         locationParts.push(address[key]);
                     }
                 };
@@ -305,8 +313,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             generateQuery();
                         }
                         else if (e.shiftKey || e.ctrlKey) {
-                            // Use area name
-                            searchInput.value = result.display_name;
+                            // Use area name - get the primary name (first part before comma)
+                            const primaryName = result.display_name.split(',')[0].trim();
+                            searchInput.value = primaryName;
                             resultsContainer.classList.add('d-none');
                             
                             // Clear bbox inputs
@@ -316,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             document.getElementById('east').value = '';
                             
                             // Show success message
-                            showToast(`Using area: ${result.display_name}`, 'success');
+                            showToast(`Using area: ${primaryName}`, 'success');
                             
                             // Generate query with area name
                             generateQuery();
@@ -983,7 +992,83 @@ document.addEventListener('DOMContentLoaded', function() {
         showToast('Example query loaded! Click "Generate Query" to see the result.', 'info');
     }
     
+    // Generate Overpass QL for OSM ID
+    function generateOsmIdQuery() {
+        const elementType = document.getElementById('osmElementType').value;
+        const osmId = document.getElementById('osmId').value.trim();
+        const recurseDown = document.getElementById('recurseDown').checked;
+        const outputElement = document.getElementById('queryOutputId');
+        
+        if (!osmId) {
+            showToast('Please enter an OSM ID', 'warning');
+            return;
+        }
+        
+        // Base query for Overpass Turbo and display
+        let query = `[out:json][timeout:${getTimeout()}];
+`;
+        
+        if (recurseDown) {
+            query += `(
+  ${elementType}(${osmId});
+  >;
+);
+`;
+        } else {
+            query += `${elementType}(${osmId});
+`;
+        }
+        
+        query += `out body;
+>;
+out skel qt;`;
+        
+        outputElement.textContent = query;
+        
+        // Overpass Turbo link
+        const turboUrl = 'https://overpass-turbo.eu/?Q=' + encodeURIComponent(query);
+        document.getElementById('openInOverpassTurboId').href = turboUrl;
+        
+        // Overpass Ultra link - use direct URL format
+        document.getElementById('openInOverpassUltraId').onclick = (e) => {
+            e.preventDefault();
+            // Overpass Ultra expects a simpler format for direct element queries
+            const baseUrl = 'https://overpass-ultra.us/';
+            const query = `[out:json];
+${elementType}(${osmId});
+out body;`;
+            
+            // Encode the query for URL
+            const encodedQuery = encodeURIComponent(query);
+            window.open(`${baseUrl}#${encodedQuery}`, '_blank');
+        };
+    }
+    
+    // Copy OSM ID query to clipboard
+    document.getElementById('copyQueryId')?.addEventListener('click', () => {
+        const query = document.getElementById('queryOutputId')?.textContent;
+        if (query && query.trim() !== '// Your generated Overpass QL query will appear here') {
+            navigator.clipboard.writeText(query.trim())
+                .then(() => showToast('Query copied to clipboard!', 'success'))
+                .catch(err => {
+                    console.error('Failed to copy query: ', err);
+                    showToast('Failed to copy query', 'danger');
+                });
+        } else {
+            showToast('No query to copy', 'warning');
+        }
+    });
+
     // Event Listeners
+    document.getElementById('generateOsmIdQuery')?.addEventListener('click', generateOsmIdQuery);
+    
+    // Handle Enter key in OSM ID input
+    document.getElementById('osmId')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            generateOsmIdQuery();
+        }
+    });
+    
     addConditionBtn.addEventListener('click', () => {
         const newCondition = addCondition();
         newCondition.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

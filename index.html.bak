@@ -265,7 +265,7 @@
                                                placeholder="e.g., @id, @type, name, amenity, shop"
                                                value="@id, @type, name, amenity, shop">
                                         <div class="form-text small">
-                                            Comma-separated list of columns. Use 'id' for OSM ID (will use ::id in query) and 'type' for element type (will use ::type in query).
+                                            Comma-separated list of columns. Use @id for OSM ID, @type for element type.
                                             <a href="https://wiki.openstreetmap.org/wiki/Overpass_API/Overpass_QL#CSV_output_mode" target="_blank">More info</a>
                                         </div>
                                     </div>
@@ -828,12 +828,8 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Prism.js for syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
-    <script src="js/autocomplete.fixed.js"></script>
+    <script src="js/autocomplete.js" defer></script>
     <script src="js/app.js" defer></script>
-    <script src="js/csv-export.fixed.js" defer></script>
+    <script src="js/csv-export.js" defer></script>
 </body>
 </html>

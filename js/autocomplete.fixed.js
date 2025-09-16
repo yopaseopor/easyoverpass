@@ -4,7 +4,7 @@ class TagInfoAutocomplete {
         this.type = type; // 'key' or 'value'
         this.onSelect = onSelect;
         this.container = input.parentElement;
-        this.dropdown = this.container.querySelector('.autocomplete-items');
+        this.dropdown = this.container.querySelector('.autocomplete-items') || this.createDropdown();
         this.currentFocus = -1;
         this.timer = null;
         this.lastQuery = '';
@@ -19,6 +19,13 @@ class TagInfoAutocomplete {
         });
     }
 
+    createDropdown() {
+        const dropdown = document.createElement('div');
+        dropdown.className = 'autocomplete-items';
+        this.container.appendChild(dropdown);
+        return dropdown;
+    }
+
     async handleInput() {
         const query = this.input.value.trim();
         if (query.length < 2 || query === this.lastQuery) {
@@ -28,7 +35,6 @@ class TagInfoAutocomplete {
         
         this.lastQuery = query;
         
-        // Clear previous timeout and set a new one
         if (this.timer) {
             clearTimeout(this.timer);
         }
@@ -39,8 +45,9 @@ class TagInfoAutocomplete {
                 this.showSuggestions(results);
             } catch (error) {
                 console.error('Error fetching suggestions:', error);
+                this.closeAllLists();
             }
-        }, 300); // Debounce for 300ms
+        }, 300);
     }
 
     async fetchSuggestions(query) {
@@ -48,8 +55,8 @@ class TagInfoAutocomplete {
         if (this.type === 'key') {
             url = `https://taginfo.openstreetmap.org/api/4/keys/all?query=${encodeURIComponent(query)}&page=1&rp=10&sortname=count_all&sortorder=desc`;
         } else {
-            const conditionGroup = this.input.closest('.condition-group');
-            const keyInput = conditionGroup.querySelector('.key') || conditionGroup.querySelector('.csv-key');
+            const conditionGroup = this.input.closest('.condition-group, .csv-condition-group');
+            const keyInput = conditionGroup ? conditionGroup.querySelector('.key, .csv-key') : null;
             const key = keyInput ? keyInput.value.trim() : '';
             if (!key) return [];
             url = `https://taginfo.openstreetmap.org/api/4/key/values?key=${encodeURIComponent(key)}&query=${encodeURIComponent(query)}&page=1&rp=10&sortname=count_all&sortorder=desc`;
@@ -80,91 +87,78 @@ class TagInfoAutocomplete {
             `;
             
             itemElement.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent event from bubbling up to document
+                e.stopPropagation();
                 this.input.value = value;
-                // Manually trigger the input event to ensure the query is updated
-                const event = new Event('input', {
-                    bubbles: true,
-                    cancelable: true,
-                });
-                this.input.dispatchEvent(event);
-                
                 this.closeAllLists();
                 if (this.onSelect) this.onSelect(value);
                 
                 // If this is a key selection, focus on the value input
                 if (this.type === 'key') {
-                    const conditionGroup = this.input.closest('.condition-group');
-                    const valueInput = conditionGroup.querySelector('.value') || conditionGroup.querySelector('.csv-value');
-                    if (valueInput) valueInput.focus();
+                    const conditionGroup = this.input.closest('.condition-group, .csv-condition-group');
+                    if (conditionGroup) {
+                        const valueInput = conditionGroup.querySelector('.value, .csv-value');
+                        if (valueInput) {
+                            valueInput.focus();
+                            // Trigger input event to show suggestions for the value
+                            valueInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }
                 }
             });
             
             this.dropdown.appendChild(itemElement);
         });
-        
-        this.dropdown.style.display = 'block';
     }
 
     highlightMatch(text, query) {
         if (!query) return text;
-        const regex = new RegExp(`(${this.escapeRegExp(query)})`, 'gi');
-        return text.replace(regex, '<span class="autocomplete-match">$1</span>');
-    }
-
-    escapeRegExp(string) {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<strong>$1</strong>');
     }
 
     handleKeyDown(e) {
-        let items = this.dropdown ? this.dropdown.getElementsByClassName('autocomplete-item') : [];
+        const items = this.dropdown.getElementsByClassName('autocomplete-item');
         
-        // Down arrow
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            this.currentFocus = (this.currentFocus + 1) % items.length;
-            this.setActive(items);
-        }
-        // Up arrow
-        else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            this.currentFocus = (this.currentFocus - 1 + items.length) % items.length;
-            this.setActive(items);
-        }
-        // Enter key
-        else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (this.currentFocus > -1 && items[this.currentFocus]) {
-                items[this.currentFocus].click();
-            }
-        }
-        // Escape key
-        else if (e.key === 'Escape') {
-            this.closeAllLists();
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.currentFocus = Math.min(this.currentFocus + 1, items.length - 1);
+                this.setActive(items);
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                this.currentFocus = Math.max(this.currentFocus - 1, -1);
+                this.setActive(items);
+                break;
+                
+            case 'Enter':
+                e.preventDefault();
+                if (this.currentFocus > -1 && items[this.currentFocus]) {
+                    items[this.currentFocus].click();
+                }
+                break;
+                
+            case 'Escape':
+                this.closeAllLists();
+                break;
         }
     }
 
     setActive(items) {
-        // Remove active class from all items
         for (let i = 0; i < items.length; i++) {
-            items[i].classList.remove('autocomplete-active');
-        }
-        
-        // Add active class to current item
-        if (this.currentFocus >= 0 && this.currentFocus < items.length) {
-            items[this.currentFocus].classList.add('autocomplete-active');
-            items[this.currentFocus].scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest'
-            });
+            items[i].classList.remove('active');
+            if (i === this.currentFocus) {
+                items[i].classList.add('active');
+                items[i].scrollIntoView({ block: 'nearest' });
+            }
         }
     }
 
     closeAllLists() {
-        const items = document.getElementsByClassName('autocomplete-items');
-        for (let i = 0; i < items.length; i++) {
-            items[i].innerHTML = '';
-            items[i].style.display = 'none';
+        const items = this.dropdown.getElementsByClassName('autocomplete-item');
+        while (this.dropdown.firstChild) {
+            this.dropdown.removeChild(this.dropdown.firstChild);
         }
         this.currentFocus = -1;
     }
@@ -179,29 +173,20 @@ function initAutocomplete() {
         if (input.hasAttribute('data-autocomplete-initialized')) return;
         console.log('Initializing key input:', input);
         
-        const isCSV = input.classList.contains('csv-key');
-        const valueClass = isCSV ? 'csv-value' : 'value';
-        const conditionGroupClass = isCSV ? '.csv-condition-group' : '.condition-group';
-        
         new TagInfoAutocomplete(input, 'key', (value) => {
             console.log('Key selected:', value);
             // When a key is selected, focus on the value input
-            const conditionGroup = input.closest(conditionGroupClass);
-            console.log('Found condition group:', conditionGroup);
-            
+            const conditionGroup = input.closest('.condition-group, .csv-condition-group');
             if (!conditionGroup) {
                 console.error('Could not find condition group for input:', input);
                 return;
             }
             
-            const valueInput = conditionGroup.querySelector(`.${valueClass}`);
-            console.log('Found value input:', valueInput);
-            
+            const valueInput = conditionGroup.querySelector('.value, .csv-value');
             if (valueInput) {
                 valueInput.focus();
                 // If the value input is empty, trigger input event to show suggestions
                 if (!valueInput.value.trim()) {
-                    console.log('Dispatching input event for value input');
                     valueInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             }
@@ -250,21 +235,16 @@ function initAutocomplete() {
     
     // Start observing the document with the configured parameters
     observer.observe(document.body, { 
-}
-});
-}
-});
-});
-});
-    
-// Start observing the document with the configured parameters
-observer.observe(document.body, { 
-childList: true, 
-subtree: true,
-attributes: false,
-characterData: false
-});
+        childList: true, 
+        subtree: true,
+        attributes: false,
+        characterData: false
+    });
 }
 
 // Initialize when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', initAutocomplete);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAutocomplete);
+} else {
+    initAutocomplete();
+}
