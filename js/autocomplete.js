@@ -48,8 +48,7 @@ class TagInfoAutocomplete {
         if (this.type === 'key') {
             url = `https://taginfo.openstreetmap.org/api/4/keys/all?query=${encodeURIComponent(query)}&page=1&rp=10&sortname=count_all&sortorder=desc`;
         } else {
-            const conditionGroup = this.input.closest('.condition-group');
-            const keyInput = conditionGroup.querySelector('.key') || conditionGroup.querySelector('.csv-key');
+            const keyInput = this.input.closest('.condition-group').querySelector('.key');
             const key = keyInput ? keyInput.value.trim() : '';
             if (!key) return [];
             url = `https://taginfo.openstreetmap.org/api/4/key/values?key=${encodeURIComponent(key)}&query=${encodeURIComponent(query)}&page=1&rp=10&sortname=count_all&sortorder=desc`;
@@ -94,8 +93,7 @@ class TagInfoAutocomplete {
                 
                 // If this is a key selection, focus on the value input
                 if (this.type === 'key') {
-                    const conditionGroup = this.input.closest('.condition-group');
-                    const valueInput = conditionGroup.querySelector('.value') || conditionGroup.querySelector('.csv-value');
+                    const valueInput = this.input.closest('.condition-group').querySelector('.value');
                     if (valueInput) valueInput.focus();
                 }
             });
@@ -172,53 +170,20 @@ class TagInfoAutocomplete {
 
 // Initialize autocomplete for all key and value inputs
 function initAutocomplete() {
-    console.log('Initializing autocomplete...');
-    
-    // Function to initialize autocomplete for a single input
-    const initKeyAutocomplete = (input) => {
-        if (input.hasAttribute('data-autocomplete-initialized')) return;
-        console.log('Initializing key input:', input);
+    // Initialize for existing condition groups
+    document.querySelectorAll('.condition-group').forEach(group => {
+        const keyInput = group.querySelector('.key');
+        const valueInput = group.querySelector('.value');
         
-        const isCSV = input.classList.contains('csv-key');
-        const valueClass = isCSV ? 'csv-value' : 'value';
-        const conditionGroupClass = isCSV ? '.csv-condition-group' : '.condition-group';
+        if (keyInput) {
+            new TagInfoAutocomplete(keyInput, 'key', () => {
+                // When a key is selected, clear the value input
+                if (valueInput) valueInput.value = '';
+            });
+        }
         
-        new TagInfoAutocomplete(input, 'key', (value) => {
-            console.log('Key selected:', value);
-            // When a key is selected, focus on the value input
-            const conditionGroup = input.closest(conditionGroupClass);
-            console.log('Found condition group:', conditionGroup);
-            
-            if (!conditionGroup) {
-                console.error('Could not find condition group for input:', input);
-                return;
-            }
-            
-            const valueInput = conditionGroup.querySelector(`.${valueClass}`);
-            console.log('Found value input:', valueInput);
-            
-            if (valueInput) {
-                valueInput.focus();
-                // If the value input is empty, trigger input event to show suggestions
-                if (!valueInput.value.trim()) {
-                    console.log('Dispatching input event for value input');
-                    valueInput.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-            }
-        });
-        
-        // Mark as initialized
-        input.setAttribute('data-autocomplete-initialized', 'true');
-    };
-
-    // Initialize key inputs in both tabs
-    document.querySelectorAll('.key, .csv-key').forEach(initKeyAutocomplete);
-    
-    // Initialize value inputs in both tabs
-    document.querySelectorAll('.value, .csv-value').forEach(input => {
-        if (!input.hasAttribute('data-autocomplete-initialized')) {
-            new TagInfoAutocomplete(input, 'value');
-            input.setAttribute('data-autocomplete-initialized', 'true');
+        if (valueInput) {
+            new TagInfoAutocomplete(valueInput, 'value');
         }
     });
     
@@ -227,43 +192,27 @@ function initAutocomplete() {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
                 if (node.nodeType === 1) { // Element node
-                    // Check for key inputs in the added node
-                    const keyInputs = node.querySelectorAll ? 
-                        node.querySelectorAll('.key, .csv-key:not([data-autocomplete-initialized])') : [];
+                    const keyInput = node.querySelector ? node.querySelector('.key') : null;
+                    const valueInput = node.querySelector ? node.querySelector('.value') : null;
                     
-                    keyInputs.forEach(initKeyAutocomplete);
+                    if (keyInput && !keyInput.hasAttribute('data-autocomplete-initialized')) {
+                        new TagInfoAutocomplete(keyInput, 'key', () => {
+                            if (valueInput) valueInput.value = '';
+                        });
+                        keyInput.setAttribute('data-autocomplete-initialized', 'true');
+                    }
                     
-                    // Initialize any value inputs in the added node
-                    const valueInputs = node.querySelectorAll ? 
-                        node.querySelectorAll('.value, .csv-value:not([data-autocomplete-initialized])') : [];
-                        
-                    valueInputs.forEach(input => {
-                        if (!input.hasAttribute('data-autocomplete-initialized')) {
-                            new TagInfoAutocomplete(input, 'value');
-                            input.setAttribute('data-autocomplete-initialized', 'true');
-                        }
-                    });
+                    if (valueInput && !valueInput.hasAttribute('data-autocomplete-initialized')) {
+                        new TagInfoAutocomplete(valueInput, 'value');
+                        valueInput.setAttribute('data-autocomplete-initialized', 'true');
+                    }
                 }
             });
         });
     });
     
     // Start observing the document with the configured parameters
-    observer.observe(document.body, { 
-}
-});
-}
-});
-});
-});
-    
-// Start observing the document with the configured parameters
-observer.observe(document.body, { 
-childList: true, 
-subtree: true,
-attributes: false,
-characterData: false
-});
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 // Initialize when the DOM is fully loaded

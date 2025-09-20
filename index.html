@@ -24,8 +24,8 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="csv-export-tab" data-bs-toggle="tab" data-bs-target="#csv-export" type="button" role="tab" aria-controls="csv-export" aria-selected="false">
-                    <i class="bi bi-file-earmark-spreadsheet"></i> CSV Export
+                <button class="nav-link" id="tag-query-2-tab" data-bs-toggle="tab" data-bs-target="#tag-query-2" type="button" role="tab" aria-controls="tag-query-2" aria-selected="false">
+                    <i class="bi bi-tag"></i> Tag Query 2
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -217,13 +217,13 @@
         </div>
     </div> <!-- Close tag-query tab -->
     
-    <!-- CSV Export Tab -->
-    <div class="tab-pane fade" id="csv-export" role="tabpanel" aria-labelledby="csv-export-tab">
+    <!-- Tag Query 2 Tab -->
+    <div class="tab-pane fade" id="tag-query-2" role="tabpanel" aria-labelledby="tag-query-2-tab">
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">CSV Export Builder</h5>
+                        <h5 class="mb-0">Tag Query Builder 2</h5>
                     </div>
                     <div class="card-body">
                         <!-- Bounding Box Selection -->
@@ -240,7 +240,7 @@
                                         </span>
                                         <input type="number" 
                                                class="form-control form-control-sm" 
-                                               id="csv-timeout" 
+                                               id="timeout-2" 
                                                min="1" 
                                                max="1800" 
                                                value="60"
@@ -249,33 +249,12 @@
                                     </div>
                                     <div class="form-text small">Set a value between 1-1800 seconds</div>
                                 </div>
-                                
-                                <div class="col-12 mt-3 border-top pt-3">
-                                    <h6 class="mb-2">CSV Export Settings</h6>
-                                    <div class="form-check form-switch mb-2">
-                                        <input class="form-check-input" type="checkbox" id="csv-output-format" checked>
-                                        <label class="form-check-label fw-bold" for="csv-output-format">Enable CSV Output Mode</label>
-                                    </div>
-                                    <div class="form-text small mb-2">Direct CSV output from Overpass API</div>
-                                    <div class="mb-2">
-                                        <label class="form-label small fw-bold mb-1">Columns to Include</label>
-                                        <input type="text" 
-                                               class="form-control form-control-sm" 
-                                               id="csv-columns" 
-                                               placeholder="e.g., @id, @type, name, amenity, shop"
-                                               value="@id, @type, name, amenity, shop">
-                                        <div class="form-text small">
-                                            Comma-separated list of columns. Use 'id' for OSM ID (will use ::id in query) and 'type' for element type (will use ::type in query).
-                                            <a href="https://wiki.openstreetmap.org/wiki/Overpass_API/Overpass_QL#CSV_output_mode" target="_blank">More info</a>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                             
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0">Bounding Box (Optional)</h6>
                                 <div>
-                                    <button class="btn btn-sm btn-outline-danger" id="csv-clearBbox" title="Clear Bounding Box">
+                                    <button class="btn btn-sm btn-outline-danger" id="clearBbox-2" title="Clear Bounding Box">
                                         <i class="bi bi-x-circle"></i> Clear
                                     </button>
                                 </div>
@@ -283,52 +262,79 @@
                             
                             <!-- Search by Place -->
                             <div class="input-group mb-2">
-                                <input type="text" class="form-control" id="csv-placeSearch" placeholder="Search for a place (city, address, etc.)">
-                                <button class="btn btn-outline-secondary" type="button" id="csv-searchPlace">
+                                <input type="text" class="form-control" id="placeSearch-2" placeholder="Search for a place (city, address, etc.)">
+                                <button class="btn btn-outline-secondary clear-search-2" type="button" title="Clear search">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                                <button class="btn btn-outline-primary" type="button" id="searchPlace-2">
                                     <i class="bi bi-search"></i> Search
                                 </button>
                             </div>
-                            <div id="csv-searchResults" class="mb-2 d-none">
-                                <div class="list-group csv-search-results-list"></div>
+                            <div class="search-help-text small mt-2">
+                                <span class="text-primary"><i class="bi bi-mouse"></i> Click</span> to set bounding box | 
+                                <span class="text-success"><i class="bi bi-shift"></i>Shift/Ctrl+Click</span> to use area name | 
+                                <span class="text-info"><i class="bi bi-option"></i>Alt+Click</span> to use relation ID
+                            </div>
+                            <div id="searchResults-2" class="mb-2 d-none">
+                                <div class="list-group search-results-list-2"></div>
+                            </div>
+                            
+                            <!-- CSV Output Options -->
+                            <div class="mt-4 pt-3 border-top">
+                                <h6 class="mb-3">CSV Output Options</h6>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="enableCsvOutput-2">
+                                    <label class="form-check-label" for="enableCsvOutput-2">Enable CSV Output</label>
+                                </div>
+                                <div id="csvColumnsContainer-2" style="display: none;">
+                                    <label class="form-label small text-muted mb-1">CSV Columns (comma-separated, e.g., @id,name,amenity)</label>
+                                    <div class="input-group input-group-sm mb-2">
+                                        <input type="text" class="form-control" id="csvColumns-2" placeholder="@id,name,amenity">
+                                        <button class="btn btn-outline-secondary" type="button" id="addDefaultColumns-2" title="Add default columns">
+                                            <i class="bi bi-list-columns"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">Special columns: @id, @type, @lat, @lon, @user, @version, @changeset, @timestamp</small>
+                                </div>
                             </div>
                             
                             <!-- Bounding Box Inputs -->
                             <div class="row g-2">
                                 <div class="col">
                                     <label class="form-label small text-muted mb-0">South (lat)</label>
-                                    <input type="number" class="form-control form-control-sm" id="csv-south" placeholder="-90 to 90" step="0.000001" min="-90" max="90">
+                                    <input type="number" class="form-control form-control-sm" id="south-2" placeholder="-90 to 90" step="0.000001" min="-90" max="90">
                                 </div>
                                 <div class="col">
                                     <label class="form-label small text-muted mb-0">West (lon)</label>
-                                    <input type="number" class="form-control form-control-sm" id="csv-west" placeholder="-180 to 180" step="0.000001" min="-180" max="180">
+                                    <input type="number" class="form-control form-control-sm" id="west-2" placeholder="-180 to 180" step="0.000001" min="-180" max="180">
                                 </div>
                                 <div class="col">
                                     <label class="form-label small text-muted mb-0">North (lat)</label>
-                                    <input type="number" class="form-control form-control-sm" id="csv-north" placeholder="-90 to 90" step="0.000001" min="-90" max="90">
+                                    <input type="number" class="form-control form-control-sm" id="north-2" placeholder="-90 to 90" step="0.000001" min="-90" max="90">
                                 </div>
                                 <div class="col">
                                     <label class="form-label small text-muted mb-0">East (lon)</label>
-                                    <input type="number" class="form-control form-control-sm" id="csv-east" placeholder="-180 to 180" step="0.000001" min="-180" max="180">
+                                    <input type="number" class="form-control form-control-sm" id="east-2" placeholder="-180 to 180" step="0.000001" min="-180" max="180">
                                 </div>
                                 <div class="col-12 mt-2">
-                                    <button class="btn btn-sm btn-outline-primary" id="csv-useMyLocation" title="Set bbox around current location">
+                                    <button class="btn btn-sm btn-outline-primary" id="useMyLocation-2" title="Set bbox around current location">
                                         <i class="bi bi-geo-alt"></i> Use My Location
                                     </button>
-                                    <button class="btn btn-sm btn-outline-secondary" id="csv-showBboxOnMap" title="Show bbox on map">
+                                    <button class="btn btn-sm btn-outline-secondary" id="showBboxOnMap-2" title="Show bbox on map">
                                         <i class="bi bi-map"></i> View on Map
                                     </button>
-                                    <span id="csv-bboxArea" class="ms-2 small text-muted"></span>
+                                    <span id="bboxArea-2" class="ms-2 small text-muted"></span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Query Conditions -->
-                        <div id="csv-queryConditions">
-                            <div class="condition-group csv-condition-group">
+                        <div id="queryConditions-2">
+                            <div class="condition-group">
                                 <div class="row g-3">
                                     <div class="col-md-3">
                                         <label class="form-label small text-muted mb-1 d-block">Element Type</label>
-                                        <select class="form-select csv-element-type">
+                                        <select class="form-select element-type-2">
                                             <option value="node">Node</option>
                                             <option value="way">Way</option>
                                             <option value="relation">Relation</option>
@@ -338,13 +344,13 @@
                                     <div class="col-md-3">
                                         <label class="form-label small text-muted mb-1 d-block">Key</label>
                                         <div class="autocomplete">
-                                            <input type="text" class="form-control csv-key" placeholder="e.g., amenity, shop" required autocomplete="off">
+                                            <input type="text" class="form-control key-2" placeholder="e.g., amenity, shop" required autocomplete="off">
                                             <div class="autocomplete-items"></div>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label small text-muted mb-1 d-block">Operator</label>
-                                        <select class="form-select csv-operator">
+                                        <select class="form-select operator-2">
                                             <option value="=">=</option>
                                             <option value="!=">≠</option>
                                             <option value="~">~</option>
@@ -356,12 +362,12 @@
                                     <div class="col-md-3">
                                         <label class="form-label small text-muted mb-1 d-block">Value</label>
                                         <div class="autocomplete">
-                                            <input type="text" class="form-control csv-value" placeholder="e.g., restaurant, cafe" autocomplete="off">
+                                            <input type="text" class="form-control value-2" placeholder="e.g., restaurant, cafe" autocomplete="off">
                                             <div class="autocomplete-items"></div>
                                         </div>
                                     </div>
                                     <div class="col-md-1 d-flex align-items-end">
-                                        <button type="button" class="btn btn-outline-danger btn-sm csv-remove-condition">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-condition-2">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -369,15 +375,15 @@
                             </div>
                         </div>
 
-                        <button class="btn btn-success" id="csv-addCondition">
+                        <button class="btn btn-success" id="addCondition-2">
                             <i class="bi bi-plus-circle"></i> Add Condition
                         </button>
 
                         <div class="mt-4">
-                            <button class="btn btn-primary" id="csv-generateQuery">
+                            <button class="btn btn-primary" id="generateQuery-2">
                                 <i class="bi bi-gear"></i> Generate Query
                             </button>
-                            <button class="btn btn-outline-secondary ms-2" id="csv-addExample">
+                            <button class="btn btn-outline-secondary ms-2" id="addExample-2">
                                 <i class="bi bi-lightbulb"></i> Load Example
                             </button>
                         </div>
@@ -388,10 +394,10 @@
             <!-- Query Output Panel -->
             <div class="col-md-6">
                 <div class="card h-100">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Generated Query</h5>
                         <div>
-                            <button class="btn btn-sm btn-light" id="csv-copyQuery" title="Copy to clipboard">
+                            <button class="btn btn-sm btn-light" id="copyQuery-2" title="Copy to clipboard">
                                 <i class="bi bi-clipboard"></i>
                             </button>
                             <div class="btn-group ms-2">
@@ -399,40 +405,26 @@
                                     <i class="bi bi-download"></i> Export
                                 </button>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item csv-export-option" href="#" data-format="csv"><i class="bi bi-filetype-csv"></i> CSV</a></li>
-                                    <li><a class="dropdown-item csv-export-option" href="#" data-format="json"><i class="bi bi-filetype-json"></i> JSON</a></li>
-                                    <li><a class="dropdown-item csv-export-option" href="#" data-format="geojson"><i class="bi bi-geo"></i> GeoJSON</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportCSV-2"><i class="bi bi-filetype-csv"></i> CSV</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportJSON-2"><i class="bi bi-filetype-json"></i> JSON</a></li>
+                                    <li><a class="dropdown-item" href="#" id="exportGeoJSON-2"><i class="bi bi-geo"></i> GeoJSON</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#" id="csv-openInOverpassTurbo" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open in Overpass Turbo</a></li>
-                                    <li><a class="dropdown-item" href="#" id="csv-openInOverpassUltra" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open in Overpass Ultra</a></li>
+                                    <li><a class="dropdown-item" href="#" id="openInOverpassTurbo-2" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open in Overpass Turbo</a></li>
+                                    <li><a class="dropdown-item" href="#" id="openInOverpassUltra-2" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open in Overpass Ultra</a></li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <pre id="csv-queryOutput" class="m-0 p-3 bg-light" style="min-height: 300px; max-height: 500px; overflow: auto;">
+                        <pre id="queryOutput-2" class="m-0 p-3 bg-light" style="min-height: 300px; max-height: 500px; overflow: auto;">
 // Your generated Overpass QL query will appear here
                         </pre>
-                    </div>
-                    <div class="card-footer">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="csv-autoUpdate" checked>
-                                <label class="form-check-label" for="csv-autoUpdate">Auto-update query</label>
-                            </div>
-                            <div>
-                                <button type="button" class="btn btn-success" id="csv-exportData">
-                                    <i class="bi bi-download"></i> Export as CSV
-                                </button>
-                            </div>
-                        </div>
-                        <div id="csv-exportStatus" class="mt-2"></div>
                     </div>
                 </div>
             </div>
         </div>
-    </div> <!-- Close csv-export tab -->
-    
+    </div> <!-- Close tag-query-2 tab -->
+
     <!-- OSM ID Query Tab -->
     <div class="tab-pane fade" id="id-query" role="tabpanel" aria-labelledby="id-query-tab">
         <div class="row">
@@ -640,184 +632,6 @@
             </div>
         </div>
 
-        <!-- CSV Export Tab -->
-        <div class="tab-pane fade" id="csv-export" role="tabpanel" aria-labelledby="csv-export-tab">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">CSV Export Builder</h5>
-                        </div>
-                        <div class="card-body">
-                            <!-- Bounding Box Selection -->
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="mb-0">Query Settings</h6>
-                                </div>
-                                
-                                <div class="row g-2 mb-3">
-                                    <div class="col-md-6">
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-clock"></i>
-                                            </span>
-                                            <input type="number" 
-                                                   class="form-control form-control-sm" 
-                                                   id="csv-timeout" 
-                                                   min="1" 
-                                                   max="1800" 
-                                                   value="60"
-                                                   placeholder="Timeout in seconds">
-                                            <span class="input-group-text">seconds</span>
-                                        </div>
-                                        <div class="form-text small">Set a value between 1-1800 seconds</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="mb-0">Bounding Box (Optional)</h6>
-                                    <div>
-                                        <button class="btn btn-sm btn-outline-danger" id="csv-clearBbox" title="Clear Bounding Box">
-                                            <i class="bi bi-x-circle"></i> Clear
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <!-- Search by Place -->
-                                <div class="input-group mb-2">
-                                    <input type="text" class="form-control" id="csv-placeSearch" placeholder="Search for a place (city, address, etc.)">
-                                    <button class="btn btn-outline-secondary" type="button" id="csv-searchPlace">
-                                        <i class="bi bi-search"></i> Search
-                                    </button>
-                                </div>
-                                <div id="csv-searchResults" class="mb-2 d-none">
-                                    <div class="list-group csv-search-results-list"></div>
-                                </div>
-                                
-                                <!-- Bounding Box Inputs -->
-                                <div class="row g-2">
-                                    <div class="col">
-                                        <label class="form-label small text-muted mb-0">South (lat)</label>
-                                        <input type="number" class="form-control form-control-sm" id="csv-south" placeholder="-90 to 90" step="0.000001" min="-90" max="90">
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label small text-muted mb-0">West (lon)</label>
-                                        <input type="number" class="form-control form-control-sm" id="csv-west" placeholder="-180 to 180" step="0.000001" min="-180" max="180">
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label small text-muted mb-0">North (lat)</label>
-                                        <input type="number" class="form-control form-control-sm" id="csv-north" placeholder="-90 to 90" step="0.000001" min="-90" max="90">
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label small text-muted mb-0">East (lon)</label>
-                                        <input type="number" class="form-control form-control-sm" id="csv-east" placeholder="-180 to 180" step="0.000001" min="-180" max="180">
-                                    </div>
-                                    <div class="col-12 mt-2">
-                                        <button class="btn btn-sm btn-outline-primary" id="csv-useMyLocation" title="Set bbox around current location">
-                                            <i class="bi bi-geo-alt"></i> Use My Location
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary" id="csv-showBboxOnMap" title="Show bbox on map">
-                                            <i class="bi bi-map"></i> View on Map
-                                        </button>
-                                        <span id="csv-bboxArea" class="ms-2 small text-muted"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Query Conditions -->
-                            <div id="csv-queryConditions">
-                                <div class="condition-group">
-                                    <div class="row g-3">
-                                        <div class="col-md-3">
-                                            <label class="form-label small text-muted mb-1 d-block">Element Type</label>
-                                            <select class="form-select element-type">
-                                                <option value="node">Node</option>
-                                                <option value="way">Way</option>
-                                                <option value="relation">Relation</option>
-                                                <option value="nwr">Node/Way/Relation</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label small text-muted mb-1 d-block">Key</label>
-                                            <div class="autocomplete">
-                                                <input type="text" class="form-control key" placeholder="e.g., amenity, shop" required autocomplete="off">
-                                                <div class="autocomplete-items"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label small text-muted mb-1 d-block">Operator</label>
-                                            <select class="form-select operator">
-                                                <option value="=">= (equals)</option>
-                                                <option value="!=">≠ (not equals)</option>
-                                                <option value="~">~ (regex match)</option>
-                                                <option value="!~">!~ (not regex)</option>
-                                                <option value="~">~* (case-insensitive)</option>
-                                                <option value="!~">!~* (not case-insensitive)</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label small text-muted mb-1 d-block">Value</label>
-                                            <input type="text" class="form-control value" placeholder="e.g., restaurant" autocomplete="off">
-                                        </div>
-                                        <div class="col-md-1 d-flex align-items-end">
-                                            <button type="button" class="btn btn-danger btn-sm remove-condition" style="display: none;">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between mt-3">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="csv-addCondition">
-                                    <i class="bi bi-plus-lg"></i> Add Condition
-                                </button>
-                                <button type="button" class="btn btn-primary" id="csv-generateQuery">
-                                    <i class="bi bi-gear"></i> Generate Query
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Query Output Panel -->
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Overpass Query</h5>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="csv-copyQuery" title="Copy to clipboard">
-                                    <i class="bi bi-clipboard"></i>
-                                </button>
-                                <a href="https://overpass-turbo.eu/" target="_blank" class="btn btn-sm btn-outline-secondary" id="csv-openInTurbo" title="Open in Overpass Turbo">
-                                    <i class="bi bi-box-arrow-up-right"></i> Turbo
-                                </a>
-                                <a href="https://overpass-ultra.us/" target="_blank" class="btn btn-sm btn-outline-secondary" id="csv-openInUltra" title="Open in Overpass Ultra">
-                                    <i class="bi bi-box-arrow-up-right"></i> Ultra
-                                </a>
-                            </div>
-                        </div>
-                        <div class="card-body p-0">
-                            <pre id="csv-queryOutput" class="m-0 p-3 bg-light" style="min-height: 200px; max-height: 400px; overflow: auto;">// Your generated Overpass QL query will appear here</pre>
-                        </div>
-                        <div class="card-footer">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="csv-autoUpdate" checked>
-                                    <label class="form-check-label" for="csv-autoUpdate">Auto-update query</label>
-                                </div>
-                                <div>
-                                    <button type="button" class="btn btn-success" id="csv-exportData">
-                                        <i class="bi bi-download"></i> Export as CSV
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <footer class="my-4 text-center text-muted">
             <p>Overpass Query Builder - 2025 | 
                 <a href="https://github.com/yourusername/overpass-query-builder" target="_blank">GitHub</a> | 
@@ -828,12 +642,8 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Prism.js for syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
-    <script src="js/autocomplete.fixed.js"></script>
+    <script src="js/autocomplete.js" defer></script>
     <script src="js/app.js" defer></script>
-    <script src="js/csv-export.fixed.js" defer></script>
+    <script src="js/app2.js" defer></script>
 </body>
 </html>
