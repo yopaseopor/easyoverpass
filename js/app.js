@@ -653,11 +653,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function generateQuery() {
-        // Get all condition elements
-        const conditionElements = document.querySelectorAll('.condition-group');
+        // Get the active tab's output element
+        const activeTab = document.querySelector('.tab-pane.active');
+        const outputElement = activeTab ? activeTab.querySelector('.query-output') : null;
+        
+        if (!outputElement) {
+            console.error('Could not find active query output element');
+            return;
+        }
+        
+        // Get all condition elements from the active tab
+        const conditionElements = activeTab.querySelectorAll('.condition-group');
         
         if (conditionElements.length === 0) {
-            queryOutput.textContent = '// Add at least one condition to generate a query';
+            outputElement.textContent = '// Add at least one condition to generate a query';
             return;
         }
         
@@ -693,13 +702,13 @@ document.addEventListener('DOMContentLoaded', function() {
                               bboxValues[1] < bboxValues[3];
             
             if (!isValidBbox) {
-                queryOutput.textContent = '// Error: Invalid bounding box coordinates. Please check your values.';
+                outputElement.textContent = '// Error: Invalid bounding box coordinates. Please check your values.';
                 return;
             }
         }
         // If relation ID is provided, validate it
         else if (isRelationId && (!/^\d+$/.test(relationId) || !relationId)) {
-            queryOutput.textContent = '// Error: Invalid relation ID. Please use a valid numeric ID after "relation:"';
+            outputElement.textContent = '// Error: Invalid relation ID. Please use a valid numeric ID after "relation:"';
             return;
         }
         
@@ -1104,7 +1113,7 @@ out body;`;
         }
     });
     
-    // Generate query when any input changes
+    // Generate query when any input changes in the first tab
     queryConditions.addEventListener('input', (e) => {
         // Only regenerate if the input is part of a condition
         if (e.target.matches('.element-type, .key, .operator, .value')) {
