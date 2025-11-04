@@ -66,8 +66,8 @@ Demo https://yopaseopor.github.io/easyoverpass
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/overpass-query-builder.git
-   cd overpass-query-builder
+   git clone https://github.com/yopaseopor/easyoverpass
+   cd easyoverpass
    ```
 
 2. Open `index.html` in your web browser
